@@ -46,8 +46,13 @@ $app->singleton(
 );
 
 $app->middleware([
+    Illuminate\Session\Middleware\StartSession::class,
+]);
+
+$app->middleware([
     App\Http\Middleware\CorsMiddleware::class
 ]);
+
 
 
 $app->singleton(
@@ -66,7 +71,7 @@ $app->singleton(
 |
 */
 
-$app->configure('app');
+$app->configure('session');
 
 /*
 |--------------------------------------------------------------------------
@@ -85,7 +90,9 @@ $app->middleware([
 
 
 
+
 $app->routeMiddleware([
+    'custom.token.authorization' => \App\Http\Middleware\CustomTokenAuthorizationMiddleware::class,
     'auth' => App\Http\Middleware\Authenticate::class,
 ]);
 
@@ -104,6 +111,9 @@ $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(App\Providers\EventServiceProvider::class);
+$app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
+$app->register(Illuminate\Session\SessionServiceProvider::class);
+
 
 /*
 |--------------------------------------------------------------------------

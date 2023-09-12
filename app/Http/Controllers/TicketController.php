@@ -28,9 +28,6 @@ class TicketController extends Controller
                     'issuetype' => [
                         'name' => $request['issue']
                     ]
-                ],
-                "transition" => [
-                    'id' => 21
                 ]
             ];
             $response = $client->request('POST', $endpoint, [
@@ -77,6 +74,27 @@ class TicketController extends Controller
             $response = $client->request('GET', $endpoint, [
                 'auth' => [$username, $password],
                 'query' => ['jql' => $jql]
+            ]);
+
+            $responseBody = $response->getBody()->getContents();
+            return response()->json(['status' => 'success', 'data' => $responseBody]);
+        } catch (\Exception $e) {
+            dd($e);
+        }
+    }
+
+    public function getUsers(Request $request, $project)
+    {
+        try {
+            $client = new Client();
+            $username = env('JIRA_USERNAME');
+            $password = env('JIRA_PASSWORD');
+            $endpoint = 'https://coojt.atlassian.net/rest/api/2/user/assignable/search';
+            $jql = "project=$project";
+
+            $response = $client->request('GET', $endpoint, [
+                'auth' => [$username, $password],
+                'query' => $jql
             ]);
 
             $responseBody = $response->getBody()->getContents();

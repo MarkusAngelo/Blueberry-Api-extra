@@ -15,6 +15,10 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         //
     ];
+    protected $routeMiddleware = [
+        'custom.token.authorization' => \App\Http\Middleware\CustomTokenAuthorizationMiddleware::class,
+    ];
+
 
     /**
      * Define the application's command schedule.
