@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
-use Log;
+
 
 class TicketController extends Controller
 {
@@ -157,4 +157,41 @@ class TicketController extends Controller
             return response()->json(['status' => 'failed', 'message' => 'Connection error'], 500);
         }
     }
+    public function getEmployees(Request $request)
+    {
+        try {
+            $client = new Client();
+            $token = $request->session()->get('_token');
+            $endpoint = 'https://stage-api-hr.bizdash.app/integration/auth/employee/list';
+
+            if ($token !== null) {
+                $headers = [
+                    'Authorization' => 'Bearer ' . $token,
+                ];
+                $response = $client->request('GET', $endpoint, [
+                    'headers' => $headers
+                ]);
+
+                $responseBody = $response->getBody()->getContents();
+                return response()->json(['status' => 'success', 'data' => $responseBody]);
+            } else if ($request->session()->has('token')) {
+                return '1';
+            } else {
+                return 'User ID not found in the session.';
+            }
+
+
+        } catch (\GuzzleHttp\Exception\ClientException $clientException) {
+            // Handle specific ClientException, such as 401 Unauthorized
+            return response()->json(['error' => 'Unauthorized'], 401);
+        } catch (\GuzzleHttp\Exception\ServerException $serverException) {
+            // Handle specific ServerException, such as 500 Internal Server Error
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        } catch (\Exception $e) {
+            // Handle other generic exceptions
+
+            return response()->json(['error' => 'An error occurred'], 500);
+        }
+    }
+
 }

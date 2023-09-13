@@ -1,4 +1,7 @@
 <?php
+use Illuminate\Session\SessionManager;
+
+use Illuminate\Session\SessionServiceProvider;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -45,15 +48,11 @@ $app->singleton(
     App\Exceptions\Handler::class
 );
 
-$app->middleware([
-    Illuminate\Session\Middleware\StartSession::class,
-]);
+
 
 $app->middleware([
     App\Http\Middleware\CorsMiddleware::class
 ]);
-
-
 
 $app->singleton(
     Illuminate\Contracts\Console\Kernel::class,
@@ -84,11 +83,16 @@ $app->configure('session');
 |
 */
 
+
+
 $app->middleware([
-    App\Http\Middleware\ExampleMiddleware::class
+    App\Http\Middleware\ExampleMiddleware::class,
+
 ]);
 
-
+$app->middleware([
+    Illuminate\Session\Middleware\StartSession::class,
+]);
 
 
 $app->routeMiddleware([
@@ -107,12 +111,23 @@ $app->routeMiddleware([
 |
 */
 
+
+$app->register(Illuminate\Session\SessionServiceProvider::class);
 $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(App\Providers\EventServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
-$app->register(Illuminate\Session\SessionServiceProvider::class);
+
+
+
+$app->singleton(Illuminate\Session\SessionManager::class, function () use ($app) {
+    return $app->loadComponent('session', Illuminate\Session\SessionServiceProvider::class, `session`);
+});
+
+$app->singleton('session.store', function () use ($app) {
+    return $app->loadComponent('session', Illuminate\Session\SessionServiceProvider::class, 'session.store');
+});
 
 
 /*
