@@ -18,7 +18,7 @@ class CustomTokenAuthorizationMiddleware
         // Check if the 'Authorization' header exists
         if (!$request->hasHeader('Authorization')) {
 
-            dd($request);
+
             return response()->json(['error' => 'aaUnauthorized'], 401);
         }
 

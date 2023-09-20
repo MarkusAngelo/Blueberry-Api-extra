@@ -18,6 +18,7 @@ class TicketController extends Controller
 
             $endpoint = 'https://coojt.atlassian.net/rest/api/2/issue';
 
+
             $data = [
                 'fields' => [
                     'project' => [
@@ -32,7 +33,8 @@ class TicketController extends Controller
             ];
             $response = $client->request('POST', $endpoint, [
                 'auth' => [$username, $password],
-                'json' => $data, // Include request body data as JSON
+                'json' => $data,
+                // Include request body data as JSON
             ]);
 
             $responseBody = $response->getBody()->getContents();
@@ -69,7 +71,7 @@ class TicketController extends Controller
             $username = env('JIRA_USERNAME');
             $password = env('JIRA_PASSWORD');
             $endpoint = 'https://coojt.atlassian.net/rest/api/2/search';
-            $jql = "project = $project";
+            $jql = "project=$project";
 
             $response = $client->request('GET', $endpoint, [
                 'auth' => [$username, $password],
@@ -136,12 +138,14 @@ class TicketController extends Controller
 
             $response = $client->request('PUT', $endpoint, [
                 'auth' => [$username, $password],
-                'json' => $data, // Include request body data as JSON
+                'json' => $data,
+                // Include request body data as JSON
             ]);
 
             $response = $client->request('POST', $t_endpoint, [
                 'auth' => [$username, $password],
-                'json' => $tdata, // Include request body data as JSON
+                'json' => $tdata,
+                // Include request body data as JSON
             ]);
             $statusCode = $response->getStatusCode();
             $responseBody = $response->getBody()->getContents();
@@ -160,24 +164,68 @@ class TicketController extends Controller
     public function getEmployees(Request $request)
     {
         try {
-            $client = new Client();
-            $token = $request->session()->get('_token');
-            $endpoint = 'https://stage-api-hr.bizdash.app/integration/auth/employee/list';
+            $key = 'ojt2023';
+            $secret = 'gpWVn69GM9FrkH7k';
 
-            if ($token !== null) {
+            $endpoint = 'https://stage-api-portal.bizdash.app/integration/auth/authenticate';
+
+            $client = new Client();
+
+            $response = $client->post($endpoint, [
+                'json' => [
+                    'key' => $key,
+                    'secret' => $secret,
+                ]
+            ]);
+            if ($response->getStatusCode() === 200) {
+                $responseBody = json_decode($response->getBody(), true);
+                $bearerToken = $responseBody['access_token'];
+
                 $headers = [
-                    'Authorization' => 'Bearer ' . $token,
+                    'Authorization' => 'Bearer ' . $bearerToken,
+                    'Content-Type' => 'application/json',
                 ];
-                $response = $client->request('GET', $endpoint, [
-                    'headers' => $headers
+
+                $pass = 'KvuWvvvjf2Tp3';
+                $mail = 'app+default@clarkoutsourcing.com';
+
+                $requestData2 = [
+                    'email' => $mail,
+                    'password' => $pass,
+                ];
+                $authenticatedResponse = $client->post('https://stage-api-portal.bizdash.app/integration/auth/login', [
+                    'headers' => $headers,
+                    'json' => $requestData2,
                 ]);
 
-                $responseBody = $response->getBody()->getContents();
-                return response()->json(['status' => 'success', 'data' => $responseBody]);
-            } else if ($request->session()->has('token')) {
-                return '1';
-            } else {
-                return 'User ID not found in the session.';
+                if ($authenticatedResponse->getStatusCode() === 200) {
+                    $responseBody = json_decode($authenticatedResponse->getBody(), true);
+                    $token = $responseBody['access_token'];
+
+                    // $request->session()->put('_token', $token);
+
+                } else {
+                    return response()->json(['error' => 'Authentication failed'], $authenticatedResponse->getStatusCode());
+                }
+                $client = new Client();
+                $endpoint = 'https://stage-api-hr.bizdash.app/integration/auth/employee/list';
+
+                if ($token !== null) {
+                    $headers = [
+                        'Authorization' => 'Bearer ' . $token,
+                    ];
+                    $response = $client->request('GET', $endpoint, [
+                        'headers' => $headers
+                    ]);
+
+                    $responseBody = $response->getBody()->getContents();
+
+                    return response()->json(['status' => 'success', 'data' => $responseBody]);
+                } else if ($request->session()->has('token')) {
+                    return '1';
+                } else {
+                    return 'User ID not found in the session.';
+                }
             }
 
 

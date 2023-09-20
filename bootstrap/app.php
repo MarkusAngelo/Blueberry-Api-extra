@@ -1,7 +1,5 @@
 <?php
-use Illuminate\Session\SessionManager;
 
-use Illuminate\Session\SessionServiceProvider;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -32,6 +30,7 @@ $app->withFacades();
 
 $app->withEloquent();
 
+
 /*
 |--------------------------------------------------------------------------
 | Register Container Bindings
@@ -42,15 +41,16 @@ $app->withEloquent();
 | your own bindings here if you like or you can make another file.
 |
 */
-
+$app->bind(Illuminate\Session\SessionManager::class, function ($app) {
+    return $app->make('session');
+});
 $app->singleton(
     Illuminate\Contracts\Debug\ExceptionHandler::class,
     App\Exceptions\Handler::class
 );
 
-
-
 $app->middleware([
+
     App\Http\Middleware\CorsMiddleware::class
 ]);
 
@@ -72,6 +72,9 @@ $app->singleton(
 
 $app->configure('session');
 
+
+$app->config->set('app.debug', true);
+
 /*
 |--------------------------------------------------------------------------
 | Register Middleware
@@ -86,18 +89,21 @@ $app->configure('session');
 
 
 $app->middleware([
+
     App\Http\Middleware\ExampleMiddleware::class,
 
 ]);
 
+
 $app->middleware([
-    Illuminate\Session\Middleware\StartSession::class,
+    Illuminate\Session\Middleware\StartSession::class
 ]);
 
 
 $app->routeMiddleware([
-    'custom.token.authorization' => \App\Http\Middleware\CustomTokenAuthorizationMiddleware::class,
+    'bearer' => \App\Http\Middleware\CustomTokenAuthorizationMiddleware::class,
     'auth' => App\Http\Middleware\Authenticate::class,
+    'web' => \Illuminate\Session\Middleware\StartSession::class,
 ]);
 
 /*
@@ -113,6 +119,7 @@ $app->routeMiddleware([
 
 
 $app->register(Illuminate\Session\SessionServiceProvider::class);
+
 $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);

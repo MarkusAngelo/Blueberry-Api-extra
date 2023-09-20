@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Log;
 
 
 class AuthController extends Controller
@@ -26,65 +28,63 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            $key = env('EMP_KEY');
-            $secret = env('EMP_SECRET');
+            $key = 'ojt2023';
+            $secret = 'gpWVn69GM9FrkH7k';
 
             $endpoint = 'https://stage-api-portal.bizdash.app/integration/auth/authenticate';
 
-            $requestData = [
-                'key' => $key,
-                'secret' => $secret,
-            ];
+            $client = new Client();
 
-            // Make a POST request to the external endpoint
-            $response = Http::post($endpoint, $requestData);
-
-            if ($response->successful()) {
-                // If the request was successful, extract the Bearer Token from the response headers
-                $responseBody = $response->json();
+            $response = $client->post($endpoint, [
+                'json' => [
+                    'key' => $key,
+                    'secret' => $secret,
+                ]
+            ]);
+            if ($response->getStatusCode() === 200) {
+                $responseBody = json_decode($response->getBody(), true);
                 $bearerToken = $responseBody['access_token'];
 
-                $email = $request->input('email'); // Get the email from the request
-                $password = $request->input('password'); // Get the password from the request
+                // $email = $request->input('email');
+                // $password = $request->input('password');
 
-                // Include the Bearer Token in the headers of your request
+
                 $headers = [
                     'Authorization' => 'Bearer ' . $bearerToken,
-                    'Content-Type' => 'application/json', // Set the content type for the request
+                    'Content-Type' => 'application/json',
                 ];
 
-                // Construct the request data containing email and password
-                $requestData = [
-                    'email' => $email,
-                    'password' => $password,
+                // $requestData2 = [
+                //     'email' => $request['email'],
+                //     'password' => $request['password'],
+                // ];
+
+                $pass = 'KvuWvvvjf2Tp3';
+                $mail = 'app+default@clarkoutsourcing.com';
+
+                $requestData2 = [
+                    'email' => $mail,
+                    'password' => $pass,
                 ];
+                $authenticatedResponse = $client->post('https://stage-api-portal.bizdash.app/integration/auth/login', [
+                    'headers' => $headers,
+                    'json' => $requestData2,
+                ]);
 
-                // Make your authenticated request using the Bearer Token and request data
-                $authenticatedResponse = Http::withHeaders($headers)->post('https://stage-api-portal.bizdash.app/integration/auth/login', $requestData);
-
-                $responseBody = $authenticatedResponse->json();
-
-                $token = $responseBody['access_token'];
-
-                if ($authenticatedResponse->successful()) {
+                if ($authenticatedResponse->getStatusCode() === 200) {
+                    $responseBody = json_decode($authenticatedResponse->getBody(), true);
+                    $token = $responseBody['access_token'];
 
                     $request->session()->put('_token', $token);
 
-
-                    return response()->json(['message' => 'Login Successfully']);
+                    return response()->json(['message' => $token]);
                 } else {
-
-                    return response()->json(['error' => 'Authentication failed'], $authenticatedResponse->status());
-
+                    return response()->json(['error' => 'Authentication failed'], $authenticatedResponse->getStatusCode());
                 }
-
             } else {
-                // If the request was not successful, handle the error
-                return response()->json(['error' => 'Failed to authenticate'], $response->status());
+                return response()->json(['error' => 'Failed to authenticate'], $response->getStatusCode());
             }
-
-
-        } catch (\Exception $e) {
+        } catch (RequestException $e) {
             return response()->json(['error' => 'Bearer Token not found'], 401);
         }
     }
